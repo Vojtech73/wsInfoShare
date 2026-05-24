@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(ls -la ~/.nvm 2>&1 || echo \".nvm directory not found\")",
+      "Read(//home/serwis/**)",
+      "Bash(cat /etc/os-release)",
+      "Read(//usr/lib/**)",
+      "Bash(cat /etc/apt/sources.list 2>&1 | head -30)",
+      "Read(//etc/apt/**)",
+      "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)",
+      "Bash(bash)"
+    ]
+  }
+}
