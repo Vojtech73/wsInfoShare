@@ -9,7 +9,13 @@
       "Bash(cat /etc/apt/sources.list 2>&1 | head -30)",
       "Read(//etc/apt/**)",
       "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)",
-      "Bash(bash)"
+      "Bash(bash)",
+      "Bash(git rm *)",
+      "Bash(rm -rf node_modules/ supabase/ wrangler.jsonc tsconfig.json CLAUDE.md.scaffold .vscode/ && ls -la)",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "/home/serwis/projekty/wsInfoShare/.vscode"
     ]
   }
 }
