@@ -1,18 +1,29 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm --version)",
-      "Bash(ls -la ~/.nvm 2>&1 || echo \".nvm directory not found\")",
-      "Read(//home/serwis/**)",
-      "Bash(cat /etc/os-release)",
-      "Read(//usr/lib/**)",
-      "Bash(cat /etc/apt/sources.list 2>&1 | head -30)",
-      "Read(//etc/apt/**)",
-      "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)",
-      "Bash(bash)",
-      "Bash(git rm *)",
-      "Bash(rm -rf node_modules/ supabase/ wrangler.jsonc tsconfig.json CLAUDE.md.scaffold .vscode/ && ls -la)",
-      "Bash(git add *)"
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git status *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Read",
+      "Edit",
+      "Write"
+    ],
+    "ask": [
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git push *)",
+      "Bash(git push)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)"
     ],
     "additionalDirectories": [
       "/home/serwis/projekty/wsInfoShare/.vscode"

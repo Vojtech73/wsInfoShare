@@ -24,9 +24,22 @@ scaffolded_at: 2026-05-27
 
 ## Pre-scaffold verification
 
-- Django docs_url (`https://docs.djangoproject.com`) is not a GitHub URL — no repo recency signal available.
-- uv 0.11.16 installed during this run (was not present on the system).
-- Django 6.0.5 installed via `uv add django`.
+**Toolchain check:**
+
+| Tool | Status | Version |
+|---|---|---|
+| Python | ✅ już zainstalowany | 3.13.5 (`/usr/bin/python3.13`) |
+| uv | ⚠️ nieobecny — zainstalowany w trakcie tego uruchomienia | 0.11.16 (via `curl -LsSf https://astral.sh/uv/install.sh \| sh`, dodany do `~/.local/bin`) |
+
+**Środowisko wirtualne:**
+- `uv init` automatycznie tworzy `.venv/` w katalogu projektu podczas `uv add`
+- Projekt przełączony na `.venv`: wszystkie polecenia Python uruchamiać przez `uv run <cmd>` lub aktywując środowisko: `source .venv/bin/activate`
+- `.venv/` dodany do `.gitignore` — nie jest śledzony przez git
+- `.python-version` (plik zawierający `3.13`) dodany do `.gitignore`
+
+**Recency check:**
+- Django docs_url (`https://docs.djangoproject.com`) nie jest adresem GitHub — brak sygnału aktualności repo.
+- Django 6.0.5 zainstalowany via `uv add django`.
 
 ## Scaffold log
 
@@ -82,7 +95,7 @@ CRITICAL: 0 | HIGH: 0 | MODERATE: 0 | LOW: 0
 
 ## Next steps
 
-1. Add Django `.gitignore` (e.g., `uv run python -m django --version` to confirm env, then add gitignore)
+1. Dodaj `~/.local/bin` do `PATH` w `.bashrc`/`.zshrc` jeśli `uv` ma być dostępny globalnie: `export PATH="$HOME/.local/bin:$PATH"`
 2. Configure `config/settings.py` for the project (DATABASE, INSTALLED_APPS, STATIC_ROOT)
 3. Install django-allauth: `uv add django-allauth django-allauth-2fa`
 4. Run `/10x-agents-md` to generate AGENTS.md for this codebase
