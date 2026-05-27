@@ -45,7 +45,7 @@ Luka rynkowa polega na braku platformy, która łączy trzy elementy jednocześn
 
 ### Guardrails
 - Każdy URL wygenerowany dla Karty przez Odbiorcę A jest nieprzewidywalny i różny od URL wygenerowanego przez Odbiorcę B dla tej samej Karty.
-- Karty w statusie `draft` oraz Karty dodane przez Odbiorcę na własny użytek nie są widoczne dla innych tenantów ani dostępne publicznie przez URL.
+- Karty w statusie `draft` oraz Karty dodane przez Odbiorcę na własny użytek nie są widoczne dla innych tenantów. Są natomiast dostępne publicznie przez URL, który wygenerował Odbiorca dla swoich klientów końcowych.
 - Publiczny widok Karty wyświetla datę ważności (może być bezterminowa), umożliwiając klientowi końcowemu samodzielną ocenę aktualności informacji.
 
 ## User Stories
