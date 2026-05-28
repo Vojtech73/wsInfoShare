@@ -23,7 +23,7 @@ Luka rynkowa polega na braku platformy, która łączy trzy elementy jednocześn
 
 ## User & Persona
 
-**Główna persona — Edytor (tenant)**: firma B2B zarejestrowana i identyfikowana oficjalnym numerem rejestracyjnym (np. NIP lub inny oficjalny identyfikator). Tworzy i publikuje Karty Informacji dla zewnętrznych odbiorców. Dotknięty bólem: każda zmiana informacji wymaga ręcznego rozsyłania; brak kontroli nad tym, kto widzi aktualną wersję i do kiedy jest ona ważna.
+**Główna persona — Edytor (tenant)**: firma B2B zarejestrowana i identyfikowana oficjalnym numerem rejestracyjnym (np. NIP lub inny oficjalny identyfikator). Tworzy i publikuje Karty Informacji dla zewnętrznych odbiorców. Dotknięty bólem: każda zmiana informacji wymaga ręcznego rozsyłania; brak kontroli nad tym, kto widzi aktualną wersję, jaka jest data publikacji i ewentualnie do kiedy jest ona ważna.
 
 **Persona drugorzędna — Odbiorca (tenant)**: firma B2B identyfikowana oficjalnym numerem rejestracyjnym. Konsumuje Karty Informacji od Edytorów i udostępnia je swoim klientom końcowym. Dotknięty bólem: brak jednego miejsca z aktualnymi informacjami od dostawców; konieczność bezpośredniego kontaktu zamiast samoobsługi 24/7.
 
@@ -46,7 +46,7 @@ Luka rynkowa polega na braku platformy, która łączy trzy elementy jednocześn
 ### Guardrails
 - Każdy URL wygenerowany dla Karty przez Odbiorcę A jest nieprzewidywalny i różny od URL wygenerowanego przez Odbiorcę B dla tej samej Karty.
 - Karty w statusie `draft` oraz Karty dodane przez Odbiorcę na własny użytek nie są widoczne dla innych tenantów. Są natomiast dostępne publicznie przez URL, który wygenerował Odbiorca dla swoich klientów końcowych.
-- Publiczny widok Karty wyświetla datę ważności (może być bezterminowa), umożliwiając klientowi końcowemu samodzielną ocenę aktualności informacji.
+- Publiczny widok Karty wyświetla, datę dodania przez edytora, datę ważności (może być bezterminowa), umożliwiając klientowi końcowemu samodzielną ocenę aktualności informacji.
 
 ## User Stories
 
@@ -59,7 +59,7 @@ Luka rynkowa polega na braku platformy, która łączy trzy elementy jednocześn
 #### Acceptance Criteria
 - Karta w statusie `draft` lub `outdated` nie jest widoczna w wyszukiwarce Odbiorcy
 - Każdy URL wygenerowany przez Odbiorcę A dla Karty X jest nieprzewidywalny i różny od URL Odbiorcy B dla tej samej Karty X
-- Publiczny widok wyświetla co najmniej: Nazwę, Opis, Kategorię, "Ważna do: [data]"
+- Publiczny widok wyświetla co najmniej: Nazwę, Opis, Kategorię, "Data publikacji: [data]"
 
 ## Functional Requirements
 
@@ -76,12 +76,12 @@ Luka rynkowa polega na braku platformy, która łączy trzy elementy jednocześn
 
 ### Uwierzytelnianie
 
-- FR-004: Użytkownik może zalogować się przez zewnętrzną usługę uwierzytelniania. Priorytet: must-have
-  > Sokrates: Rozważono kontrargument "zewnętrzna usługa auth opóźni MVP". Rozwiązanie: zachowano — centralne zarządzanie tożsamością to wymaganie od dnia 1 dla wielotenantowego B2B.
+- FR-004: Użytkownik może zalogować się przez  usługę uwierzytelniania. Priorytet: must-have
+  > Sokrates: Rozważono kontrargument "zewnętrzna usługa auth opóźni MVP". Rozwiązanie: centralne zarządzanie tożsamością to wymaganie od dnia 1 dla wielotenantowego B2B.
 
 ### Karty Informacji — tworzenie i zarządzanie (Edytor)
 
-- FR-005: Edytor może stworzyć Kartę Informacji z atrybutami: Nazwa, Opis, Data obowiązywania (od-do), Kategoria. Priorytet: must-have
+- FR-005: Edytor może stworzyć Kartę Informacji z atrybutami: Nazwa, Opis, Data obowiązywania (od: domyślnie data publikacji do: domyślnie bezterminowo), Kategoria. Priorytet: must-have
 - FR-006: Edytor może zmieniać status Karty ręcznie: draft → published → outdated. Priorytet: must-have
   > Sokrates: Rozważono kontrargument "karta published po dacie ważności jest myląca". Rozwiązanie: status tylko manualny — Edytor odpowiada za aktualność; publiczny widok wyświetla datę ważności czytelnie.
 - FR-007: Edytor może określić zasięg Karty jako globalny. Priorytet: must-have
@@ -92,12 +92,12 @@ Luka rynkowa polega na braku platformy, która łączy trzy elementy jednocześn
 
 ### Wyszukiwanie i przeglądanie (Odbiorca)
 
-- FR-011: Odbiorca może wyszukiwać publiczne Karty według kryteriów: nazwa, opis, kategoria, data ważności. Priorytet: must-have
+- FR-011: Odbiorca może wyszukiwać publiczne Karty według kryteriów: Id edytora, nazwa, opis, kategoria, daty. Priorytet: must-have
 
 ### URL i QR (Odbiorca)
 
-- FR-012: Odbiorca może wygenerować unikalny URL dla wybranej Karty (jeden URL per Odbiorca per Karta; regeneracja nadpisuje poprzedni URL). Priorytet: must-have
-  > Sokrates: Rozważono kontrargument "nieograniczone URLe na tę samą kartę = bałagan śledzenia". Rozwiązanie: jeden URL per Odbiorca per Karta; regeneracja nadpisuje.
+- FR-012: Odbiorca może wygenerować unikalny URL dla wybranej Karty (jeden URL per Odbiorca per Karta; regeneracja nie nadpisuje poprzedniego Url - wydrukowane QR dla aktywnej karty muszą działać niezależnie od momentu generowania URL). Priorytet: must-have
+  > Sokrates: Rozważono kontrargument "nieograniczone URLe na tę samą kartę = bałagan śledzenia". Rozwiązanie: jeden URL per Odbiorca per Karta; regeneracja nie  nadpisuje.
 - FR-013: Odbiorca może wygenerować kod QR z unikalnym URL. Priorytet: must-have
 - FR-014: Odbiorca widzi listę Kart, dla których wygenerował URL (historia linków). Priorytet: must-have
 
@@ -125,7 +125,7 @@ Karta Informacji jest dostępna dla Odbiorcy wyłącznie wtedy, gdy Edytor jawni
 
 **Reguła widoczności**: Karta jest widoczna dla Odbiorcy w wyszukiwarce i dostępna przez unikalny URL wtedy i tylko wtedy, gdy spełnione są jednocześnie trzy warunki: (1) status Karty to `published` — ustawiony ręcznie przez Edytora, (2) zasięg Karty obejmuje kontekst Odbiorcy (w MVP: zasięg globalny obejmuje wszystkich Odbiorców), (3) Karta nie jest zarchiwizowana. Edytor samodzielnie zarządza wszystkimi stanami; system nie zmienia statusu automatycznie.
 
-**Reguła identyfikacji**: Dla każdej pary (Odbiorca, Karta) platforma generuje dokładnie jeden unikalny identyfikator URL. Identyfikator ten jest charakterystyczny wyłącznie dla tej pary — żaden inny Odbiorca dla tej samej Karty nie otrzyma tego samego identyfikatora, a żadna osoba trzecia nie może go odgadnąć przez wyliczenie. Regeneracja URL nadpisuje poprzedni identyfikator dla tej pary.
+**Reguła identyfikacji**: Dla każdej pary (Odbiorca, Karta) platforma generuje dokładnie jeden unikalny identyfikator URL. Identyfikator ten jest charakterystyczny wyłącznie dla tej pary — żaden inny Odbiorca dla tej samej Karty nie otrzyma tego samego identyfikatora, a żadna osoba trzecia nie może go odgadnąć przez wyliczenie. Regeneracja URL nie nadpisuje poprzedniego identyfikator dla tej pary.
 
 Użytkownik napotyka obie reguły w przepływie produktu: Edytor zmienia status na `published` → reguła widoczności sprawia, że Karta pojawia się w wyszukiwarce Odbiorcy; Odbiorca generuje URL → reguła identyfikacji zapewnia, że link jest unikalny dla tej pary Odbiorca-Karta i może być bezpiecznie udostępniony klientowi końcowemu przez QR.
 
@@ -143,16 +143,16 @@ Model wielotenantowy. Rola przypisana do tenanta (firmy), nie do indywidualnego 
 
 **Niezalogowany użytkownik (posiadacz URL)**: dostęp wyłącznie do publicznego widoku konkretnej Karty przez unikalny URL; brak dostępu do wyszukiwarki ani jakiegokolwiek innego widoku platformy.
 
-Mechanizm uwierzytelniania: zewnętrzna usługa uwierzytelniania — konkretne rozwiązanie jest otwartą kwestią (patrz Open Questions nr 3).
+Mechanizm uwierzytelniania: usługa uwierzytelniania — konkretne rozwiązanie jest otwartą kwestią (patrz Open Questions nr 3).
 
 ## Non-Goals
 
 - **Brak zasięgu lokalnego (miasto + promień km) i prywatnego** — MVP obsługuje wyłącznie zasięg globalny; zasięg lokalny i prywatny to v2+.
 - **Brak raportowania** — brak statystyk wyświetleń, kliknięć ani skanowań QR per Edytor i Odbiorca; analytics to v2.
-- **Brak wersjonowania Kart** — edycja Karty nadpisuje poprzednią treść; historia zmian nie jest śledzona w MVP.
+- **Brak wersjonowania Kart** — edycja Karty nadpisuje poprzednią treść; historia zmian nie jest śledzona w MVP; wersjonowanie to v2.
 - **Brak powiadomień** — brak e-maili ani alertów o nowych Kartach, zmianach statusów ani zbliżającym się wygaśnięciu w MVP.
-- **Brak importu treści z pliku** — Karty tworzone wyłącznie ręcznie w panelu Edytora; brak importu masowego.
-- **Brak edytora WYSIWYG** — pola tekstowe z podstawowym formatowaniem; brak edytora wizualnego w MVP.
+- **Brak importu treści z pliku** — Karty tworzone wyłącznie ręcznie w panelu Edytora; brak importu masowego; import kart to v2.
+- **Brak edytora WYSIWYG** — pola tekstowe z podstawowym formatowaniem; brak edytora wizualnego w MVP. Stylowanie treści kart automatycznie wg zdefiniwanych reguł. 
 - **Brak implementacji tłumaczeń i obsługi wielu języków** — pola tekstowe w MVP; mechanizm tłumaczenia i interfejs wielojęzyczny to v2.
 - **Brak automatycznego uzupełniania danych tenanta z rejestrów publicznych** — Admin wpisuje dane tenanta ręcznie; integracja z bazami rejestracyjnymi to opcja v2.
 - **Brak zabezpieczeń na poziomie wierszy bazy danych** — izolacja tenantów realizowana na poziomie aplikacji w MVP; zabezpieczenia na poziomie wierszy bazy danych to v2.
@@ -163,7 +163,7 @@ Mechanizm uwierzytelniania: zewnętrzna usługa uwierzytelniania — konkretne r
 
 2. **Szacunek tygodni MVP** (`timeline_budget.mvp_weeks`) — nieznany; projekt realizowany po godzinach, bez twardego terminu. Należy określić przed startem implementacji.
 
-3. **Mechanizm uwierzytelniania** — zewnętrzna usługa uwierzytelniania jest wymaganiem (FR-004), ale konkretne rozwiązanie nie zostało wybrane. Decyzja: etap wyboru stosu technologicznego.
+3. **Mechanizm uwierzytelniania** — usługa uwierzytelniania jest wymaganiem (FR-004), ale konkretne rozwiązanie nie zostało wybrane. Decyzja: etap wyboru stosu technologicznego.
 
 4. **Zarządzanie wygasłymi Kartami** — ustalono, że publiczny widok wyświetla datę ważności i klient ocenia aktualność samodzielnie (FR-006, FR-015). Nierozstrzygnięte: czy system powinien alertować Edytora o Kartach, których data ważności zbliża się lub minęła? Jeśli tak — przez jaki kanał i z jakim wyprzedzeniem?
 
