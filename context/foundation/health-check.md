@@ -1,8 +1,8 @@
 ---
 project: ws-info-share
-checked_at: 2026-05-28T00:00:00Z
+checked_at: 2026-06-05T00:00:00Z
 health_status: needs-attention
-context_type: greenfield
+context_type: brownfield
 language_family: python
 stack_assessment_available: false
 checks_run:
@@ -14,10 +14,10 @@ checks_run:
   - configuration
 audit_findings:
   critical: 0
-  high: 0
+  high: 1
   moderate: 0
   low: 0
-test_runner_detected: false
+test_runner_detected: true
 ci_provider: null
 recommended_fixes: 4
 ---
@@ -31,19 +31,26 @@ Status:          present (uv.lock)
 Package manager: uv
 ```
 
-`uv.lock` wygenerowany automatycznie podczas bootstrapu. Wszystkie wersje zależności zamrożone — kompilacje są reprodukowalne.
+`uv.lock` obecny — wszystkie wersje zależności zamrożone, kompilacje reprodukowalne.
 
 ### Security Audit
 
 ```
 Tool:    pip-audit 2.10.0 (uv run pip-audit --format json)
-Summary: 0 CRITICAL, 0 HIGH, 0 MODERATE, 0 LOW
-Direct vs transitive: nie rozróżniane przez pip-audit
+Summary: 0 CRITICAL, 1 HIGH, 0 MODERATE, 0 LOW
+Direct vs transitive: nie rozróżniane przez pip-audit w tym wywołaniu
 ```
 
-Brak znanych podatności. Pakiety audytowane: asgiref 3.11.1, django 6.0.5, sqlparse 0.5.5.
+#### HIGH findings
 
-> Uwaga: `pip-audit` zainstalowany tymczasowo przez `uv pip install` podczas bootstrapu — nie jest zarejestrowany w `pyproject.toml` jako zależność deweloperska. Na innej maszynie `uv run pip-audit` nie zadziała. Patrz Recommended Fixes #3.
+- **pip** 26.1.1 — PYSEC-2026-196 (CVE-2026-8643): pip traktuje `console_scripts` i
+  `gui_scripts` jako ścieżki zamiast nazw plików, nie sanityzując bezwzględnej ścieżki
+  instalacji — prowadzi do instalowania entry pointów poza katalogiem instalacji (path
+  traversal przy instalowaniu złośliwego pakietu). Fix: zaktualizuj do pip 26.1.2.
+
+> Uwaga kontekstowa: podatność dotyczy narzędzia `pip` wbudowanego w `.venv`, nie
+> zależności produkcyjnych. Ryzyko dotyczy środowiska deweloperskiego podczas
+> instalowania pakietów. Django, asgiref i inne zależności produkcyjne są czyste.
 
 ### Outdated Dependencies
 
@@ -51,36 +58,37 @@ Brak znanych podatności. Pakiety audytowane: asgiref 3.11.1, django 6.0.5, sqlp
 Packages with major version gaps: 0
 ```
 
-Drobne aktualizacje patch (nie wymagają działania):
-
-- **idna**: 3.16 → 3.17 (patch)
-- **platformdirs**: 4.9.6 → 4.10.0 (patch)
+Wszystkie zależności bezpośrednie i przechodnie aktualne. Brak pakietów z lukami
+w wersjach głównych.
 
 ---
 
 ## Test Suite
 
 ```
-Test runner:    nie wykryto
-Tests found:    nie dotyczy
-Test execution: nie podjęto próby
+Test runner:    pytest 9.0.3
+Tests found:    0 (runner działa, brak plików testowych)
+Test execution: runner uruchomiony pomyślnie (uv run python -m pytest --collect-only)
 ```
 
-Brak konfiguracji pytest w `pyproject.toml`, brak `pytest.ini`, `tox.ini`, `setup.cfg`. Projekt nie ma żadnych testów ani zdefiniowanego runnera.
+```
+Configuration: pyproject.toml [tool.pytest.ini_options]
+Framework:     pytest 9.0.3 + pytest-django 4.12.0
+```
 
-```
-⚠ Brak test runnera. Agent nie może weryfikować własnych zmian.
-Zalecane: pytest — najpopularniejszy runner dla projektów Django.
-Setup: uv add --dev pytest pytest-django
-```
+Runner skonfigurowany i działa. Zarejestrowany w `[dependency-groups] dev`.
+`DJANGO_SETTINGS_MODULE = "config.settings"` ustawiony poprawnie.
+Brak plików testowych — agent może uruchamiać testy, ale nie ma jeszcze nic do
+weryfikacji. Pierwszym krokiem implementacji powinno być napisanie choćby jednego
+testu smoke-test.
 
 ---
 
 ## CI/CD
 
 ```
-Provider:      nie wykryto
-Configuration: nie znaleziono
+Provider:      not detected
+Configuration: not found
 ```
 
 Brak katalogu `.github/workflows/`, brak `.gitlab-ci.yml` ani innych plików CI.
@@ -90,25 +98,39 @@ Brak katalogu `.github/workflows/`, brak `.gitlab-ci.yml` ani innych plików CI.
   i wdrożenia. Na razie lokalny runner testów wystarczy do współpracy z agentem.
 ```
 
+| Stage      | Status | Notes                                       |
+|------------|--------|---------------------------------------------|
+| Lint       | ✗      | nie skonfigurowano                          |
+| Test       | ✗      | nie skonfigurowano (runner lokalny działa)  |
+| Build      | ✗      | nie skonfigurowano                          |
+| Type check | ✗      | nie skonfigurowano                          |
+| Security   | ✗      | nie skonfigurowano                          |
+
 ---
 
 ## Configuration
 
 ### High severity
 
-- **pytest (dev dependency)** — brak test runnera uniemożliwia agentowi weryfikację własnych zmian. Fix: `uv add --dev pytest pytest-django` + konfiguracja w `pyproject.toml`.
+Brak wysokich luk konfiguracyjnych.
 
 ### Medium severity
 
-- **.gitignore zawiera pozostałości Astro/Node.js** — obecne są wpisy dla `node_modules/`, `.astro/`, `wrangler/`, `.dev.vars`, `npm-debug.log*` itp. z poprzedniego stacku. Nie blokują pracy, ale zaśmiecają konfigurację. Fix: usuń zbędne sekcje JS/Cloudflare z `.gitignore`.
+- **Brak lintowania i formatowania kodu** — `ruff` (linting + formatting) ani żaden
+  inny narzędzie kodu nie jest skonfigurowane w `pyproject.toml`. Agent generuje kod
+  niespójny stylistycznie bez egzekwowanego formatera. Fix: `uv add --dev ruff` +
+  dodaj `[tool.ruff]` do `pyproject.toml`.
 
-- **pip-audit nie jest zarejestrowany jako dev dependency** — zainstalowany tymczasowo, nie pojawia się w `pyproject.toml`. Fix: `uv add --dev pip-audit`.
+- **Brak sprawdzania typów** — `mypy` lub `pyright` nie są skonfigurowane. Django jest
+  dynamicznie typowany (`typed: false` w rejestrze starterów), ale projekt może
+  kompensować przez ścisłe typowanie w logice biznesowej. Bez CI wymuszającego mypy
+  agent nie sygnalizuje błędów typów. Fix: `uv add --dev mypy django-stubs` +
+  dodaj `[tool.mypy]` do `pyproject.toml`.
 
 ### Low severity
 
-- **.env.example nieobecny** — projekt Django wymaga zmiennych środowiskowych (`SECRET_KEY`, `DATABASE_URL`, `REDIS_URL`). Brak szablonu zmiennych to potencjalna pułapka dla nowych deweloperów i agentów. Fix: utwórz `.env.example` z pustymi wartościami dla wymaganych zmiennych.
-
-- **.editorconfig nieobecny** — brak spójnego formatowania między edytorami. Fix: dodaj `.editorconfig` z ustawieniami Python (indent_size=4, end_of_line=lf).
+- **.editorconfig nieobecny** — brak spójnego formatowania między edytorami (indent,
+  end-of-line). Fix: utwórz `.editorconfig` z `indent_size=4`, `end_of_line=lf`.
 
 ---
 
@@ -125,57 +147,116 @@ Uruchom /10x-stack-assess dla analizy bramek jakości stosu.
 
 ### Fix before agent work (Category A)
 
-### 1. Dodaj pytest i skonfiguruj test runner
+### 1. Zaktualizuj pip do 26.1.2 (podatność path traversal)
 
-**Impact**: Bez test runnera agent nie może weryfikować własnych zmian. To najważniejsza luka dla efektywnej współpracy z agentem.
+**Impact**: pip 26.1.1 zawiera podatność path traversal (PYSEC-2026-196) — złośliwy
+pakiet może zapisywać pliki poza katalogiem instalacji podczas `pip install`. Ryzyko
+dotyczy środowiska deweloperskiego.
 **Severity**: high
 **Effort**: quick (< 5 min)
 **Fix**:
 
 ```bash
-source ~/.local/bin/env
-uv add --dev pytest pytest-django
+uv pip install --upgrade pip
+```
+
+Zweryfikuj po aktualizacji:
+
+```bash
+uv run pip-audit --format json
+```
+
+---
+
+### 2. Dodaj ruff — linting i formatowanie
+
+**Impact**: Bez formatera agent generuje kod niespójny stylistycznie (wcięcia, długość
+linii, kolejność importów). Ruff jest najszybszym wyborem dla projektów Django/Python —
+zastępuje black, isort, flake8 jedną zależnością.
+**Severity**: medium
+**Effort**: moderate (15–30 min)
+**Fix**:
+
+```bash
+uv add --dev ruff
 ```
 
 Dodaj do `pyproject.toml`:
 
 ```toml
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
-python_files = ["tests.py", "test_*.py", "*_tests.py"]
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
 ```
 
-### 2. Oczyść .gitignore z pozostałości Astro
+Uruchom formatowanie:
 
-**Impact**: Zaśmiecona konfiguracja może dezorientować agenta przy analizie projektu — wpisy dla `node_modules/`, `.astro/`, Cloudflare nie mają zastosowania w projekcie Django/Python.
+```bash
+uv run ruff format .
+uv run ruff check . --fix
+```
+
+---
+
+### 3. Dodaj mypy — sprawdzanie typów
+
+**Impact**: Django jest dynamicznie typowany, ale logika biznesowa projektu (unikalne
+URL-e, izolacja tenantów) korzysta na statycznych typach. Bez mypy agent generuje
+funkcje bez adnotacji typów, co utrudnia późniejszy refactoring.
 **Severity**: medium
-**Effort**: quick (< 5 min)
-**Fix**: Usuń z `.gitignore` sekcje: `# build output` (`.astro/`), `# dependencies` (`node_modules/`), `# logs` (npm/yarn/pnpm), `# cloudflare` (`.dev.vars`, `.wrangler/`), powiel wpis `dist/` → zostaw jeden.
-
-### 3. Zarejestruj pip-audit jako dev dependency
-
-**Impact**: Bez wpisu w `pyproject.toml` audyt nie zadziała na nowej maszynie (`uv sync` go nie zainstaluje).
-**Severity**: medium
-**Effort**: quick (< 5 min)
+**Effort**: moderate (15–30 min)
 **Fix**:
 
 ```bash
-uv add --dev pip-audit
+uv add --dev mypy django-stubs
 ```
 
-### 4. Dodaj .env.example
+Dodaj do `pyproject.toml`:
 
-**Impact**: Agent i nowi deweloperzy nie wiedzą jakich zmiennych środowiskowych wymaga aplikacja. Django bez `SECRET_KEY` nie wystartuje.
-**Severity**: low
-**Effort**: quick (< 5 min)
-**Fix**: Utwórz `.env.example`:
+```toml
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
+```
+
+Uruchom sprawdzenie:
 
 ```bash
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-DATABASE_URL=postgres://user:password@localhost:5432/ws_info_share
-REDIS_URL=redis://localhost:6379/0
-ALLOWED_HOSTS=localhost,127.0.0.1
+uv run mypy .
+```
+
+---
+
+### 4. Dodaj .editorconfig
+
+**Impact**: Brak spójnego formatowania między edytorami — drobna niedogodność, ale
+`ruff` + `.editorconfig` razem eliminują wszystkie stylistyczne rozbieżności.
+**Severity**: low
+**Effort**: quick (< 5 min)
+**Fix**: Utwórz `.editorconfig` w katalogu głównym:
+
+```ini
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+indent_size = 4
+
+[*.{yml,yaml,json,toml}]
+indent_size = 2
 ```
 
 ---
@@ -184,18 +265,16 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 
 ### Brak CI/CD pipeline
 
-**Lesson**: Sprint Zero z Agentem: infrastruktura, walking skeleton i pierwszy deploy (M1L5)
-**What you'll do there**: Skonfigurowanie GitHub Actions z etapami lint, test, build i auto-deploy do środowiska docelowego.
+**Lesson**: [Sprint Zero z Agentem: infrastruktura, walking skeleton i pierwszy deploy (M1L5)](https://platforma.przeprogramowani.pl/external/10xdevs-3/m1-l5)
+**What you'll do there**: Konfiguracja GitHub Actions z etapami lint (ruff), test
+(pytest), type-check (mypy) i auto-deploy do Fly.io.
 
-### Brak AGENTS.md / kontekstu agenta
+### Brak konfiguracji wdrożenia
 
-**Lesson**: Agent Onboarding: Agents.md, AI Rules i feedback loops (M1L4)
-**What you'll do there**: Wygenerowanie AGENTS.md z konwencjami projektu, strukturą Django i zasadami pracy z agentem w tym stacku.
-
-### Brak konfiguracji wdrożenia (Docker Compose, Nginx)
-
-**Lesson**: Sprint Zero z Agentem: infrastruktura, walking skeleton i pierwszy deploy (M1L5)
-**What you'll do there**: Konfiguracja Docker Compose dla Django + PostgreSQL + Redis + Nginx pod Hetzner VPS.
+**Lesson**: [Sprint Zero z Agentem: infrastruktura, walking skeleton i pierwszy deploy (M1L5)](https://platforma.przeprogramowani.pl/external/10xdevs-3/m1-l5)
+**What you'll do there**: Konfiguracja `fly.toml`, `Dockerfile` (Django + Gunicorn)
+i zmiennych środowiskowych w Fly.io. Cel wdrożenia zmieniony na Fly.io (poprzedni
+raport odwoływał się do Hetzner VPS — `tech-stack.md` zaktualizowany w tej sesji).
 
 ---
 
@@ -205,6 +284,13 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 Health status: needs-attention
 ```
 
-Projekt jest świeżo po bootstrapie — zależności czyste (0 podatności), lockfile obecny, Django 6.0.5 zainstalowany. Główna luka to brak test runnera: bez pytest agent nie może weryfikować własnych zmian, co znacząco obniża niezawodność współpracy. Pozostałe problemy to porządkowe: .gitignore z pozostałościami Astro oraz brakujące .env.example. Brak CI/CD i AGENTS.md to oczekiwane luki na tym etapie — zostaną uzupełnione w kolejnych lekcjach.
+Projekt poczynił znaczące postępy od ostatniej kontroli (2026-05-28): pytest
+skonfigurowany i działa, pip-audit zarejestrowany jako dev dependency, `.env.example`
+obecny, `.gitignore` oczyszczony z pozostałości Astro, AGENTS.md i CLAUDE.md obecne.
+Główne luki to podatność HIGH w `pip` (path traversal, szybka poprawka — upgrade do
+26.1.2) oraz brak lintowania i sprawdzania typów, co obniża jakość kodu generowanego
+przez agenta. Runner testów działa, ale nie ma jeszcze żadnych testów do uruchomienia.
 
-Next step: Wykonaj poprawki Kategorii A (szacowany czas: ~15 minut), następnie przejdź do onboardingu agenta (/10x-agents-md).
+Next step: Wykonaj poprawki Kategorii A w kolejności (szacowany łączny czas: ~45 min),
+napisz pierwszy test smoke-test, a następnie przejdź do lekcji infrastrukturalnej
+(M1L5) w celu konfiguracji CI/CD i wdrożenia na Fly.io.

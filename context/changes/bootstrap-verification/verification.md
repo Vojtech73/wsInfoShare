@@ -1,11 +1,19 @@
 ---
+bootstrapped_at: 2026-06-05T00:00:00Z
 starter_id: django
+starter_name: Django
 project_name: ws-info-share
-phase_3_status: ok
-scaffolded_at: 2026-05-27
+language_family: python
+package_manager: uv
+cwd_strategy: native-cwd
+bootstrapper_confidence: verified
+phase_3_status: failed
+audit_command: pip-audit
 ---
 
 ## Hand-off
+
+Frontmatter z `context/foundation/tech-stack.md` (stan po aktualizacji 2026-06-05):
 
 | Field | Value |
 |---|---|
@@ -15,87 +23,111 @@ scaffolded_at: 2026-05-27
 | language_family | python |
 | bootstrapper_confidence | verified |
 | path_taken | standard |
-| deployment_target | self-host |
+| deployment_target | fly |
 | has_auth | true |
 | has_payments | false |
 | has_realtime | false |
 | has_ai | false |
 | has_background_jobs | false |
 
+### Why this stack
+
+Projekt wsInfoShare to wielotenantowa platforma B2B realizowana po godzinach w
+Pythonie. Django jest rekomendowaną wartością domyślną dla `(saas, python)` i
+spełnia trzy z czterech kryteriów przyjaznych agentowi (convention-based,
+popular_in_training, well_documented; `typed: false` jest mitygowane przez
+dyscyplinę typów w logice biznesowej). Auth jest w zakresie MVP (FR-004) —
+wbudowany system auth Django jest bezpośrednim dopasowaniem. Model
+wielotenantowy (rola przypisana do tenanta, nie do użytkownika) mapuje się
+naturalnie na ORM Django z polem `tenant_id` na każdym modelu i filtrowaniem
+na poziomie queryset. Publiczny widok Karty (FR-015) — otwierany przez skan
+QR bez logowania — spełnia wymaganie NFR ≤2s przez standardowe Django
+Templates bez kroku SPA. Frontend realizowany przez HTMX + Alpine.js +
+Tailwind CSS + Flowbite — hipermedialne podejście bez kroku budowania SPA, w
+pełni zintegrowane z Django Templates. Fly.io jako cel wdrożenia:
+konteneryzowany deploy, managed PostgreSQL add-on, workflow CLI-first
+(`flyctl`), hojny darmowy tier na MVP. CI na GitHub Actions z auto-deploy po
+merge do main.
+
+---
+
 ## Pre-scaffold verification
 
-**Toolchain check:**
+| Signal      | Value                                            | Severity | Notes                                                             |
+|-------------|--------------------------------------------------|----------|-------------------------------------------------------------------|
+| npm package | not run                                          | —        | nie dotyczy — starter nie-JS                                      |
+| GitHub repo | not run                                          | —        | docs_url (`https://docs.djangoproject.com`) nie jest adresem GitHub |
 
-| Tool | Status | Version |
-|---|---|---|
-| Python | ✅ już zainstalowany | 3.13.5 (`/usr/bin/python3.13`) |
-| uv | ⚠️ nieobecny — zainstalowany w trakcie tego uruchomienia | 0.11.16 (via `curl -LsSf https://astral.sh/uv/install.sh \| sh`, dodany do `~/.local/bin`) |
+Brak sygnału aktualności. Kontynuowano bez ostrzeżenia.
 
-**Środowisko wirtualne:**
-- `uv init` automatycznie tworzy `.venv/` w katalogu projektu podczas `uv add`
-- Projekt przełączony na `.venv`: wszystkie polecenia Python uruchamiać przez `uv run <cmd>` lub aktywując środowisko: `source .venv/bin/activate`
-- `.venv/` dodany do `.gitignore` — nie jest śledzony przez git
-- `.python-version` (plik zawierający `3.13`) dodany do `.gitignore`
-
-**Recency check:**
-- Django docs_url (`https://docs.djangoproject.com`) nie jest adresem GitHub — brak sygnału aktualności repo.
-- Django 6.0.5 zainstalowany via `uv add django`.
+---
 
 ## Scaffold log
 
-**Strategy**: native-cwd (CLI writes directly into the current directory)
+**Resolved invocation**: `uv run django-admin startproject . .`
+**Strategy**: native-cwd
+**Exit code**: 1
+**Pre-flight files-to-touch**: `manage.py`, `config/__init__.py`, `config/settings.py`, `config/urls.py`, `config/wsgi.py`, `config/asgi.py`
+**Stderr (last 20 lines)**:
 
-**Commands run** (in sequence):
-1. `uv init --no-readme --name ws-info-share` → created `pyproject.toml`, `.python-version`
-2. `uv add django` → installed Django 6.0.5, asgiref 3.11.1, sqlparse 0.5.5; created `uv.lock`, `.venv/`
-3. `uv run django-admin startproject config .` → created `manage.py`, `config/`
-
-**Django module name**: `config` (conventional name for Django settings module; `ws-info-share` contains hyphens and is not a valid Python identifier)
-
-**Files created by scaffold**:
 ```
-manage.py
-config/__init__.py
-config/settings.py
-config/urls.py
-config/wsgi.py
-config/asgi.py
-pyproject.toml
-.python-version
-uv.lock
-.venv/
+CommandError: '.' is not a valid project name. Please make sure the name is a valid identifier.
 ```
 
-**Files preserved from cwd** (conflict policy applied):
-- `context/` — preserved, scaffold never writes here
-- `CLAUDE.md` — preserved
-- `.gitignore` — preserved (Django does not generate one)
-- `.git/` — preserved
+**.bootstrap-scaffold**: nie dotyczy — strategia native-cwd nie tworzy katalogu tymczasowego.
 
-**Artifacts removed post-scaffold**:
-- `main.py` — generated by `uv init`, not used in Django projects; removed
+**Przyczyna awarii**: strategia `native-cwd` podstawia `{name}=.` w szablonie
+`django-admin startproject {name} .`, co daje `django-admin startproject . .`.
+Polecenie `django-admin startproject` oczekuje ważnego identyfikatora Python jako
+nazwy projektu — `.` jest nieprawidłowe.
+
+**Kontekst**: projekt był już poprawnie zainicjowany w poprzednim uruchomieniu
+bootstrappera (2026-05-27) poleceniem `uv run django-admin startproject config .`.
+Bieżące uruchomienie było próbą ponownego bootstrapu po zmianie `deployment_target`
+z `self-host` na `fly` w `tech-stack.md`. Pliki projektu są nienaruszone — cwd
+nie uległo zmianie.
+
+---
 
 ## Post-scaffold audit
 
-Tool: `pip-audit` (via `uv run pip-audit`)
+**Audit not run**: scaffold halted at Step 2; no project to audit.
 
-Result: **No known vulnerabilities found**
-
-Packages audited: asgiref 3.11.1, django 6.0.5, sqlparse 0.5.5
-
-CRITICAL: 0 | HIGH: 0 | MODERATE: 0 | LOW: 0
+---
 
 ## Hints recorded but not acted on (v1)
 
-- `has_auth: true` — django-allauth + django-allauth-2fa noted in tech-stack.md; not installed by bootstrapper v1
-- `deployment_target: self-host` — Docker Compose / Nginx/Gunicorn setup not generated by v1
-- `ci_provider: github-actions` — `.github/workflows/` not generated by v1
-- `ci_default_flow: auto-deploy-on-merge` — not wired by v1
-- Celery-ready settings skeleton — noted in tech-stack.md rationale; not scaffolded by v1
+| Hint                    | Value                  |
+|-------------------------|------------------------|
+| bootstrapper_confidence | verified               |
+| quality_override        | false                  |
+| path_taken              | standard               |
+| self_check_answers      | null                   |
+| team_size               | solo                   |
+| deployment_target       | fly                    |
+| ci_provider             | github-actions         |
+| ci_default_flow         | auto-deploy-on-merge   |
+| has_auth                | true                   |
+| has_payments            | false                  |
+| has_realtime            | false                  |
+| has_ai                  | false                  |
+| has_background_jobs     | false                  |
+
+---
 
 ## Next steps
 
-1. Dodaj `~/.local/bin` do `PATH` w `.bashrc`/`.zshrc` jeśli `uv` ma być dostępny globalnie: `export PATH="$HOME/.local/bin:$PATH"`
-2. Configure `config/settings.py` for the project (DATABASE, INSTALLED_APPS, STATIC_ROOT)
-3. Install django-allauth: `uv add django-allauth django-allauth-2fa`
-4. Run `/10x-agents-md` to generate AGENTS.md for this codebase
+**Scaffold CLI zakończył się błędem — projekt jest jednak nienaruszony.**
+
+Projekt Django (manage.py, config/, pyproject.toml, uv.lock) pochodzi z
+poprzedniego uruchomienia bootstrappera (2026-05-27) i jest w pełni funkcjonalny.
+Bieżące uruchomienie zakończyło się błędem z powodu ograniczenia szablonu
+bootstrappera (native-cwd + django-admin startproject), nie z powodu błędu w
+projekcie.
+
+Zmiana `deployment_target: fly` w `tech-stack.md` to jedyna różnica względem
+poprzedniego uruchomienia — nie wymaga ponownego uruchamiania scaffoldu.
+
+Kolejne kroki:
+- Uruchom `/10x-infra-research` (Plan Mode deploy) aby skonfigurować wdrożenie na Fly.io
+- Zaimplementuj poprawki z `context/foundation/health-check.md` Kategoria A (pip upgrade, ruff, mypy)
